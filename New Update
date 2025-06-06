@@ -1,0 +1,78 @@
+import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// === TABLE SCHEMAS ===
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const templates = pgTable("templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // e.g. 'wedding', 'birthday', 'event'
+  thumbnail: text("thumbnail").notNull(),
+  design: jsonb("design").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const invitations = pgTable("invitations", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  templateId: integer("template_id").references(() => templates.id),
+  design: jsonb("design").notNull(),
+  eventType: text("event_type").notNull(),
+  eventDate: text("event_date"),
+  eventTime: text("event_time"),
+  eventLocation: text("event_location"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contactInquiries = pgTable("contact_inquiries", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  eventType: text("event_type").notNull(),
+  eventDate: text("event_date"),
+  budget: text("budget"),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === ZOD VALIDATION SCHEMAS ===
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+});
+
+export const insertTemplateSchema = createInsertSchema(templates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInvitationSchema = createInsertSchema(invitations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContactInquirySchema = createInsertSchema(contactInquiries).omit({
+  id: true,
+  createdAt: true,
+});
+
+// === TYPESCRIPT TYPES ===
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Template = typeof templates.$inferSelect;
+export type InsertTemplate = z.infer<typeof insertTemplateSchema>;
+
+export type Invitation = typeof invitations.$inferSelect;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
+
+export type ContactInquiry = typeof contactInquiries.$inferSelect;
+export type InsertContactInquiry = z.infer<typeof insertContactInquirySchema>;
